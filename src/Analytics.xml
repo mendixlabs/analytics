@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget id="mendix.analytics.Analytics" pluginWidget="true" needsEntityContext="true" offlineCapable="true"
+        supportedPlatform="Web"
+        xmlns="http://www.mendix.com/widget/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mendix.com/widget/1.0/ ../node_modules/mendix/custom_widget.xsd">
+    <name>Analytics</name>
+    <description>My widget description</description>
+    <icon/>
+    <properties>
+        <propertyGroup caption="General">
+
+            <property key="jsonState" type="attribute" required="true">
+                <caption>Incoming Session</caption>
+                <description>json of created MX session</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                </attributeTypes>
+            </property>
+            
+            <property key="communicateOut" type="attribute" required="true">
+                <caption>Com Json</caption>
+                <description>communication json string</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                </attributeTypes>
+            </property>
+
+            <property key="sendInitialSession" type="action" required="false">
+                <caption>Initial</caption>
+                <description>Action - Setup Current User</description>
+            </property>
+
+            <property key="addPageViewed" type="action" required="true">
+                <caption>Page Viewed</caption>
+                <description>Action - Page Viewed</description>
+            </property>
+
+            <property key="eventListenerAction" type="action" required="true">
+                <caption>Event</caption>
+                <description>Action - Event Widget</description>
+            </property>
+            <!-- <property key="timerAction" type="action" required="true">
+                <caption>Timer</caption>
+                <description>Action - Timer Widget</description>
+            </property> -->
+
+        </propertyGroup>
+    </properties>
+</widget>
