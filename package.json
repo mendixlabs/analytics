@@ -41,6 +41,7 @@
         "@types/uuid": "^8.3.3",
         "classnames": "^2.2.6",
         "pubsub-js": "^1.9.4",
-        "uuid": "^8.3.2"
+        "uuid": "^8.3.2",
+        "web-vitals": "^2.1.4"
     }
 }

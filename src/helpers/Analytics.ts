@@ -2,15 +2,8 @@ import { v4 as uuidv4 } from "uuid";
 import React from "react";
 import PubSub from "pubsub-js";
 import { debounce } from ".";
-import {
-    EClassNamePayloadType,
-    EPayloadType,
-    IAddPageDate,
-    IClassNamePayload,
-    INewPage,
-    ITimer,
-    IUserData
-} from "./types";
+import { EClassNamePayloadType, IAddPageDate, IClassNamePayload, INewPage, IUserData } from "./types";
+import { getCLS, getFID, getLCP } from "web-vitals";
 
 interface ISession {
     currentPageName: string | undefined;
@@ -40,19 +33,16 @@ export class AnalyticsSession implements ISession {
     didUserReload = false;
     private startedDate: Date;
     private currentPage: INewPage | undefined;
+    private prevPage: INewPage | undefined;
     private observer: MutationObserver | undefined;
     private localStorageString = "sessionId";
     private previousResources: PerformanceEntryList | undefined;
-    private timer: ITimer | undefined;
-    private sentInitialTimer: boolean;
-    private _timerCheck: any;
     private eventListenerToken: string | undefined;
     private timerToken: string | undefined;
     private userData: IUserData | undefined;
 
     constructor() {
         this.observer = undefined;
-        this.sentInitialTimer = false;
         this.startedDate = new Date();
     }
 
@@ -71,14 +61,6 @@ export class AnalyticsSession implements ISession {
         if (this.eventListenerToken) {
             PubSub.unsubscribe(this.eventListenerToken);
         }
-    }
-    /**
-     * Initialize Timer Listener Pubsub
-     */
-    timerListenerSub(callBackFn: (n: ITimer) => void) {
-        this.timerToken = PubSub.subscribe(this.timerListenerName, (msg: string, data: string) => {
-            this.timerCallBack(msg, data, callBackFn);
-        });
     }
     /**
      * UnLoad Timer Listener Pubsub
@@ -107,36 +89,23 @@ export class AnalyticsSession implements ISession {
             loadTime
         };
         this.currentPage = newPage;
+        this.prevPage = undefined;
         PubSub.publish("PAGE_CHANGE", true); // Let Widget Know The Page Changed
-        const payLoad = this.buildPayload({ newPage, prevPage: undefined });
+        const payLoad = this.buildPayloads({});
         callBackFn(payLoad);
         // Build Payload
     }
-    private buildPayload(payLoad: any): IMendixCommunicationPayload {
+    private buildPayloads({ event }: any): IMendixCommunicationPayload {
         const pLoad: IMendixCommunicationPayload = {
             sessionId: this.sessionId as string,
             userSession: this.userData as IUserData,
-            ...payLoad
+            newPage: this.currentPage,
+            prevPage: this.prevPage,
+            event
         };
         return pLoad;
     }
 
-    /**
-     * Callback called by timer Pubsub
-     */
-    private timerCallBack(_msg: string, data: string, callBackFn: (n: ITimer) => void) {
-        const parsedData = JSON.parse(data);
-        switch (parsedData.type) {
-            case EPayloadType.START:
-                this.startATimer(parsedData.name, callBackFn);
-                break;
-            case EPayloadType.END:
-                this.endCurrentTimer(parsedData.name, callBackFn);
-                break;
-            default:
-                break;
-        }
-    }
     /**
      * Callback called by event Pubsub
      */
@@ -152,8 +121,7 @@ export class AnalyticsSession implements ISession {
 
             case EClassNamePayloadType.CLICKED:
                 const clickAddedEvent = this.addClickedToEventListener(parsedData);
-                const payLoad = this.buildPayload({ event: clickAddedEvent });
-                console.log("payLoad", payLoad);
+                const payLoad = this.buildPayloads({ event: clickAddedEvent });
                 setTimeout(() => {
                     callBackFn(payLoad);
                 }, 0);
@@ -208,27 +176,6 @@ export class AnalyticsSession implements ISession {
         }
     }
 
-    // /**
-    //  * Adds EventLister Payload on Page
-    //  * @param IClassNamePayload
-    //  * @depricated
-    //  */
-    // private addEventListerFromPage(parsedData: IClassNamePayload): IClassNamePayload {
-    //     const payLoad = {
-    //         ...parsedData,
-    //         pageId: this.currentPage?.uuid,
-    //         dateAdded: new Date(),
-    //         dateLastClicked: null,
-    //         clicked: 0,
-    //         _id: uuidv4()
-    //     };
-    //     this.eventListeners.push({
-    //         ...payLoad
-    //     });
-
-    //     return payLoad;
-    // }
-
     private addClickedToEventListener(parsedData: IClassNamePayload) {
         const foundClickIndex = this.eventListeners.findIndex(listener => listener.className === parsedData.className); // Nice
 
@@ -280,13 +227,6 @@ export class AnalyticsSession implements ISession {
             localStorage.setItem(this.localStorageString, this.sessionId);
         }
     }
-
-    private setTimerToLocalStorage(name: string) {
-        if (this.timer) {
-            localStorage.setItem(name, JSON.stringify(this.timer));
-        }
-    }
-
     addPage(callBackFn: (n: any) => void) {
         const browserPageName = window.history.state.pageInfo.formParams.path;
         // Check if page is new
@@ -299,8 +239,9 @@ export class AnalyticsSession implements ISession {
             if (previousPage) {
                 const timerInMS = new Date().valueOf() - (this.currentPage?.startDate as Date).valueOf();
                 previousPage.leaveDate = new Date();
-                previousPage.duration = timerInMS / 1000;
+                previousPage.duration = timerInMS;
             }
+            this.prevPage = previousPage;
             this.currentPageName = browserPageName;
             const loadTime = this.getCurrentResources();
             const newPage: INewPage = {
@@ -312,7 +253,7 @@ export class AnalyticsSession implements ISession {
                 loadTime
             };
             this.currentPage = newPage;
-            const payLoad = this.buildPayload({ newPage, prevPage: previousPage });
+            const payLoad = this.buildPayloads({});
             return callBackFn(payLoad);
         }
     }
@@ -352,21 +293,35 @@ export class AnalyticsSession implements ISession {
         }
     }
 
+    logDelta({ name, id, delta }: any) {
+        console.log(`🔥${name} matching ID ${id} changed by ${delta}`);
+    }
+
     private getCurrentResources() {
         const resources = performance.getEntriesByType("resource");
+        const paint = performance.getEntriesByType("paint");
+        const firstInput = performance.getEntriesByType("first-input");
+        console.log("paint", paint);
+        // getCLS(this.logDelta);
+        // getFID(console.log);
+        // getCLS(this.logDelta);
+
+        // const t = firstInput[0]?.processingStart - firstInput[0]?.startTime;
+        // console.log("firstInput", firstInput, t);
         if (!this.previousResources?.length) {
             /**
              * Initial Page Load - Count All
              */
             const times = this.sumOfDuration(resources);
             this.previousResources = resources;
-            return times ? times / 1000 : 0;
+            return times ? times : 0;
         } else {
             const found = resources.findIndex(x => x.name.includes(this.currentPageName as string));
             this.previousResources = resources;
             const newEntries = resources.slice(found);
             const times = this.sumOfDuration(newEntries);
-            return times ? times / 1000 : 0;
+            console.log("times", times);
+            return times ? times : 0;
         }
     }
     private sumOfDuration(resources: PerformanceEntryList) {
@@ -378,109 +333,5 @@ export class AnalyticsSession implements ISession {
         }, 0);
 
         return times;
-    }
-
-    private getTimerFromLocalStorage(name: string): ITimer | undefined {
-        const localStorageId = localStorage.getItem(name);
-        return localStorageId ? JSON.parse(localStorageId) : undefined;
-    }
-    private removeTimerFromLocalStorage(name: string): void {
-        localStorage.removeItem(name);
-    }
-
-    private startATimer(name: string, callBackFn: (n: ITimer) => void) {
-        if (this.timer && this.timer?.formName !== name) {
-            // Abandoned old form
-            return this.abandonedCurrentForm(name, callBackFn, true);
-        }
-        if (!this.sentInitialTimer) {
-            return this.setUpANewTimer(name, callBackFn);
-        } else {
-            this.timer = {
-                ...this.timer,
-                id: this.timer?.id as string,
-                formName: name,
-                pageId: this.currentPage?.uuid as string,
-                pageName: window.history.state.pageInfo.formParams.path,
-                status: EPayloadType.START
-            };
-            clearInterval(this._timerCheck);
-            this.setTimerToLocalStorage(name);
-            this.startInternalTimerCheck(name, callBackFn);
-        }
-    }
-
-    private setUpANewTimer(name: string, callBackFn: (n: any) => void) {
-        this.timer = {
-            id: uuidv4(),
-            formName: name,
-            pageId: this.currentPage?.uuid as string,
-            pageName: window.history.state.pageInfo.formParams.path,
-            status: EPayloadType.START,
-            startDate: new Date()
-        };
-        this.sentInitialTimer = true;
-        this.setTimerToLocalStorage(name);
-        clearInterval(this._timerCheck);
-        this.startInternalTimerCheck(name, callBackFn);
-        const payLoad = this.buildPayload({ timer: this.timer });
-        // If this is called by abandoned form we give it some time
-        setTimeout(() => {
-            callBackFn(payLoad);
-        }, 100);
-    }
-    private abandonedCurrentForm(name: string, callBackFn: (n: any) => void, restart = false) {
-        const timerInMS = new Date().valueOf() - (this.timer?.startDate as Date).valueOf();
-        this.timer = {
-            ...this.timer,
-            id: this.timer?.id as string,
-            pageId: this.currentPage?.uuid as string,
-            formName: this.timer?.formName as string,
-            status: EPayloadType.ABANDONED,
-            endDate: new Date(),
-            time: timerInMS / 1000,
-            pageName: this.currentPageName as string
-        };
-        const payLoad = this.buildPayload({ timer: this.timer });
-        callBackFn(payLoad);
-        this.removeTimerFromLocalStorage(this.timer?.formName as string);
-        clearInterval(this._timerCheck);
-        this.sentInitialTimer = false;
-        this.timer = undefined;
-        if (restart) {
-            this.startATimer(name, callBackFn);
-        }
-    }
-
-    private startInternalTimerCheck(name: string, callBackFn: (n: ITimer) => void) {
-        this._timerCheck = setInterval(() => {
-            const getTimerFromStorage = this.getTimerFromLocalStorage(name);
-            if (getTimerFromStorage) {
-                if (this.currentPageName === getTimerFromStorage.pageName) {
-                    // Still on Same Page so Form is Still being filled in
-                } else {
-                    // Current Page does not match in
-                    this.abandonedCurrentForm(name, callBackFn);
-                }
-            }
-        }, 500);
-    }
-
-    private endCurrentTimer(name: string, callBackFn: (n: ITimer) => void) {
-        if (this.timer) {
-            const timerInMS = new Date().valueOf() - (this.timer.startDate as Date).valueOf();
-            this.timer = {
-                ...this.timer,
-                formName: name,
-                status: EPayloadType.END,
-                endDate: new Date(),
-                time: timerInMS / 1000
-            };
-            clearInterval(this._timerCheck);
-            this.removeTimerFromLocalStorage(name);
-            callBackFn(this.timer);
-            this.sentInitialTimer = false;
-            this.timer = undefined;
-        }
     }
 }
