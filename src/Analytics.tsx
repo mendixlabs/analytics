@@ -3,7 +3,6 @@ import { AnalyticsContainerProps } from "../typings/AnalyticsProps";
 import { ValueStatus } from "mendix";
 import { AnalyticsSession } from "./helpers/Analytics";
 import { IClassNamePayload } from "./helpers/types";
-import { getCLS } from "web-vitals";
 
 const session = new AnalyticsSession();
 
@@ -26,7 +25,6 @@ const Analytics = (props: AnalyticsContainerProps) => {
     }, [props.eventListenerAction]);
 
     useEffect(() => {
-        console.log("🔥", props.jsonState.status);
         if (props.jsonState.status === ValueStatus.Available && !session.sessionId) {
             const mxSession = JSON.parse(props?.jsonState?.displayValue);
             session.addLandingPage(mxSession.sessionId, addPageLand);
@@ -46,10 +44,23 @@ const Analytics = (props: AnalyticsContainerProps) => {
     function mutationObsCallback() {
         session.addPage(addPageToServer);
     }
+    // function pageOffLoad() {
+    //     console.log("🧰", window.history.state.pageInfo.formParams.path); // Right before the user gets off
+    //     // session.addPage(addPageToServer);
+    //     session.setPageLeaveResources();
+    // }
 
     useEffect(() => {
-        getCLS(console.log);
         if (props.jsonState.status === ValueStatus.Available) {
+            // window.history.pushState = new Proxy(window.history.pushState, {
+            //     apply: (target, thisArg, argArray) => {
+            //         pageOffLoad();
+            //         return target.apply(thisArg, argArray);
+            //     }
+            // });
+            // window.onpopstate = function (event) {
+            //     console.log("🧰", window.history.state.pageInfo.formParams.path); // Right before the user gets off
+            // };
             session.initializeMutant(ref, mutationObsCallback);
         }
         return () => {
@@ -57,7 +68,17 @@ const Analytics = (props: AnalyticsContainerProps) => {
         };
     }, [props.jsonState.status]);
 
-    return <div>Helloss</div>;
+    return <div></div>;
 };
 
 export default Analytics;
+// window.addEventListener("visibilitychange", function () {
+// });
+//     console.log(`object🔥`, document.visibilityState);
+// });
+
+// window.history.pushState = new Proxy(window.history.pushState, {
+//     apply: (target, thisArg, argArray) => {
+//         console.log("🔥", window.history.state.pageInfo.formParams.path); // Right before the user gets off
+//         return target.apply(thisArg, argArray);
+//     }

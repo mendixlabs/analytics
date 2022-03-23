@@ -3,7 +3,7 @@ import React from "react";
 import PubSub from "pubsub-js";
 import { debounce } from ".";
 import { EClassNamePayloadType, IAddPageDate, IClassNamePayload, INewPage, IUserData } from "./types";
-import { getCLS, getFID, getLCP } from "web-vitals";
+// import { getCLS, getFID, getLCP } from "web-vitals";
 
 interface ISession {
     currentPageName: string | undefined;
@@ -297,17 +297,37 @@ export class AnalyticsSession implements ISession {
         console.log(`🔥${name} matching ID ${id} changed by ${delta}`);
     }
 
-    private getCurrentResources() {
+    public setPageLeaveResources() {
         const resources = performance.getEntriesByType("resource");
-        const paint = performance.getEntriesByType("paint");
-        const firstInput = performance.getEntriesByType("first-input");
-        console.log("paint", paint);
-        // getCLS(this.logDelta);
-        // getFID(console.log);
+        this.previousResources = resources;
+        performance.mark("End");
+    }
+
+    private getCurrentResources() {
+        // getFID(this.logDelta);
         // getCLS(this.logDelta);
 
-        // const t = firstInput[0]?.processingStart - firstInput[0]?.startTime;
-        // console.log("firstInput", firstInput, t);
+        // function onFirstInputEntry(entry, po) {
+        //     // if (entry.startTime < firstHiddenTime) {
+        //     const fid = entry.processingStart - entry.startTime;
+        //     po.disconnect();
+        //     console.log("fid", fid);
+        //     // }
+        // }
+
+        // const po = new PerformanceObserver((entryList, po) => {
+        //     entryList.getEntries().forEach(entry => onFirstInputEntry(entry, po));
+        // });
+
+        // po.observe({
+        //     type: "first-input",
+        //     buffered: true
+        // });
+
+        const resources = performance.getEntriesByType("resource");
+        // const paint = performance.getEntriesByType("paint");
+        // const firstInput = performance.getEntriesByType("first-input");
+
         if (!this.previousResources?.length) {
             /**
              * Initial Page Load - Count All
@@ -316,12 +336,19 @@ export class AnalyticsSession implements ISession {
             this.previousResources = resources;
             return times ? times : 0;
         } else {
-            const found = resources.findIndex(x => x.name.includes(this.currentPageName as string));
+            performance.mark("Begin");
+            const intersection = resources.filter(x => !(this.previousResources as PerformanceEntryList).includes(x));
             this.previousResources = resources;
-            const newEntries = resources.slice(found);
-            const times = this.sumOfDuration(newEntries);
-            console.log("times", times);
-            return times ? times : 0;
+            if (intersection.length) {
+                const times = this.sumOfDuration(intersection);
+                return times;
+            } else {
+                const times = this.sumOfDuration(resources);
+                return times;
+            }
+            // const found = resources.findIndex(x => x.name.includes(this.currentPageName as string));
+            // const newEntries = resources.slice(found);
+            // return times ? times : 0;
         }
     }
     private sumOfDuration(resources: PerformanceEntryList) {
