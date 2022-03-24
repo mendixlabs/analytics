@@ -15,6 +15,7 @@ export interface AnalyticsContainerProps {
     communicateOut: EditableValue<string>;
     sendInitialSession?: ActionValue;
     addPageViewed?: ActionValue;
+    addPageLeave?: ActionValue;
     eventListenerAction?: ActionValue;
 }
 
@@ -27,5 +28,6 @@ export interface AnalyticsPreviewProps {
     communicateOut: string;
     sendInitialSession: {} | null;
     addPageViewed: {} | null;
+    addPageLeave: {} | null;
     eventListenerAction: {} | null;
 }

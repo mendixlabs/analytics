@@ -1,6 +1,6 @@
 {
-    "name": "analytics",
-    "widgetName": "Analytics",
+    "name": "analyticsevent",
+    "widgetName": "AnalyticsEvent",
     "version": "1.0.0",
     "description": "My widget description",
     "copyright": "2020 Mendix Technology BV",
@@ -26,7 +26,7 @@
     },
     "license": "Apache-2.0",
     "devDependencies": {
-        "@mendix/pluggable-widgets-tools": "^9.8.0",
+        "@mendix/pluggable-widgets-tools": "^9.0.0",
         "@types/big.js": "^6.0.2",
         "@types/classnames": "^2.2.4",
         "@types/enzyme": "^3.10.8",
@@ -38,10 +38,9 @@
     },
     "dependencies": {
         "@types/pubsub-js": "^1.8.3",
-        "@types/uuid": "^8.3.3",
+        "@types/uuid": "^8.3.4",
         "classnames": "^2.2.6",
         "pubsub-js": "^1.9.4",
-        "uuid": "^8.3.2",
-        "web-vitals": "^2.1.4"
+        "uuid": "^8.3.2"
     }
 }

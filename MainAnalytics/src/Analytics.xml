@@ -31,7 +31,11 @@
             </property>
 
             <property key="addPageViewed" type="action" required="true">
-                <caption>Page Viewed</caption>
+                <caption>Page Land</caption>
+                <description>Action - Page Viewed</description>
+            </property>
+            <property key="addPageLeave" type="action" required="true">
+                <caption>Page Leave</caption>
                 <description>Action - Page Viewed</description>
             </property>
 

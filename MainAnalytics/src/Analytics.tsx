@@ -1,7 +1,7 @@
-import { createElement, useRef, useEffect } from "react";
+import { createElement, useRef, useEffect, Fragment } from "react";
 import { AnalyticsContainerProps } from "../typings/AnalyticsProps";
 import { ValueStatus } from "mendix";
-import { AnalyticsSession } from "./helpers/Analytics";
+import { AnalyticsSession, IMendixCommunicationPayload } from "./helpers/Analytics";
 import { IClassNamePayload } from "./helpers/types";
 
 const session = new AnalyticsSession();
@@ -31,12 +31,24 @@ const Analytics = (props: AnalyticsContainerProps) => {
         }
     }, [props.jsonState.status]);
 
-    const addPageLand = (newPage: any) => {
+    /**
+     * On Page Land
+     */
+    const addPageLand = (newPage: IMendixCommunicationPayload) => {
         props.communicateOut.setValue(JSON.stringify(newPage));
         props.sendInitialSession?.execute();
     };
-
-    const addPageToServer = (newPage: any) => {
+    /**
+     * On Page Leave
+     */
+    const addPageLeave = (newPage: IMendixCommunicationPayload) => {
+        props.communicateOut.setValue(JSON.stringify(newPage));
+        props.addPageLeave?.execute();
+    };
+    /**
+     * On PAge Change
+     */
+    const addPageToServer = (newPage: IMendixCommunicationPayload) => {
         props.communicateOut.setValue(JSON.stringify(newPage));
         props.addPageViewed?.execute();
     };
@@ -44,23 +56,20 @@ const Analytics = (props: AnalyticsContainerProps) => {
     function mutationObsCallback() {
         session.addPage(addPageToServer);
     }
-    // function pageOffLoad() {
-    //     console.log("🧰", window.history.state.pageInfo.formParams.path); // Right before the user gets off
-    //     // session.addPage(addPageToServer);
-    //     session.setPageLeaveResources();
-    // }
+
+    function pageOffLoad() {
+        session.addLeavePage(addPageLeave);
+    }
 
     useEffect(() => {
         if (props.jsonState.status === ValueStatus.Available) {
-            // window.history.pushState = new Proxy(window.history.pushState, {
-            //     apply: (target, thisArg, argArray) => {
-            //         pageOffLoad();
-            //         return target.apply(thisArg, argArray);
-            //     }
-            // });
-            // window.onpopstate = function (event) {
-            //     console.log("🧰", window.history.state.pageInfo.formParams.path); // Right before the user gets off
-            // };
+            window.history.pushState = new Proxy(window.history.pushState, {
+                apply: (target, thisArg, argArray) => {
+                    pageOffLoad();
+                    return target.apply(thisArg, argArray);
+                }
+            });
+
             session.initializeMutant(ref, mutationObsCallback);
         }
         return () => {
@@ -68,17 +77,7 @@ const Analytics = (props: AnalyticsContainerProps) => {
         };
     }, [props.jsonState.status]);
 
-    return <div></div>;
+    return <Fragment></Fragment>;
 };
 
 export default Analytics;
-// window.addEventListener("visibilitychange", function () {
-// });
-//     console.log(`object🔥`, document.visibilityState);
-// });
-
-// window.history.pushState = new Proxy(window.history.pushState, {
-//     apply: (target, thisArg, argArray) => {
-//         console.log("🔥", window.history.state.pageInfo.formParams.path); // Right before the user gets off
-//         return target.apply(thisArg, argArray);
-//     }
