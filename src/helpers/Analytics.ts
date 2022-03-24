@@ -3,7 +3,6 @@ import React from "react";
 import PubSub from "pubsub-js";
 import { debounce } from ".";
 import { EClassNamePayloadType, IAddPageDate, IClassNamePayload, INewPage, IUserData } from "./types";
-// import { getCLS, getFID, getLCP } from "web-vitals";
 
 interface ISession {
     currentPageName: string | undefined;
@@ -18,7 +17,7 @@ interface ISession {
     eventListenerSub: (callBackFn: (n: IClassNamePayload) => void) => void;
     eventListenerUnSub: () => void;
 }
-interface IMendixCommunicationPayload {
+export interface IMendixCommunicationPayload {
     sessionId: string;
     userSession: IUserData;
     [key: string]: any;
@@ -73,7 +72,7 @@ export class AnalyticsSession implements ISession {
     /**
      * addLandingPage
      */
-    public addLandingPage(id: string, callBackFn: (n: any) => void) {
+    public addLandingPage(id: string, callBackFn: (n: IMendixCommunicationPayload) => void) {
         const browserPageName = window.history.state.pageInfo.formParams.path;
         // Set Up Initial User Settings
         this.setUpSession(id);
@@ -235,13 +234,6 @@ export class AnalyticsSession implements ISession {
         } else {
             // Page did change
             PubSub.publish("PAGE_CHANGE", true); // Let Widget Know The Page Changed
-            const previousPage = this.currentPage;
-            if (previousPage) {
-                const timerInMS = new Date().valueOf() - (this.currentPage?.startDate as Date).valueOf();
-                previousPage.leaveDate = new Date();
-                previousPage.duration = timerInMS;
-            }
-            this.prevPage = previousPage;
             this.currentPageName = browserPageName;
             const loadTime = this.getCurrentResources();
             const newPage: INewPage = {
@@ -256,6 +248,22 @@ export class AnalyticsSession implements ISession {
             const payLoad = this.buildPayloads({});
             return callBackFn(payLoad);
         }
+    }
+    addLeavePage(callBackFn: (n: any) => void) {
+        // Check if page is new
+        // Page did not change
+        if (!this.currentPage) {
+        }
+        this.getCurrentResources();
+        const previousPage = { ...this.currentPage };
+        if (previousPage) {
+            const timerInMS = new Date().valueOf() - (this.currentPage?.startDate as Date).valueOf();
+            previousPage.leaveDate = new Date();
+            previousPage.duration = timerInMS;
+        }
+        this.prevPage = previousPage as INewPage;
+        const payLoad = this.buildPayloads({});
+        return callBackFn(payLoad);
     }
 
     private userDeviceSettings() {
@@ -300,34 +308,10 @@ export class AnalyticsSession implements ISession {
     public setPageLeaveResources() {
         const resources = performance.getEntriesByType("resource");
         this.previousResources = resources;
-        performance.mark("End");
     }
 
     private getCurrentResources() {
-        // getFID(this.logDelta);
-        // getCLS(this.logDelta);
-
-        // function onFirstInputEntry(entry, po) {
-        //     // if (entry.startTime < firstHiddenTime) {
-        //     const fid = entry.processingStart - entry.startTime;
-        //     po.disconnect();
-        //     console.log("fid", fid);
-        //     // }
-        // }
-
-        // const po = new PerformanceObserver((entryList, po) => {
-        //     entryList.getEntries().forEach(entry => onFirstInputEntry(entry, po));
-        // });
-
-        // po.observe({
-        //     type: "first-input",
-        //     buffered: true
-        // });
-
         const resources = performance.getEntriesByType("resource");
-        // const paint = performance.getEntriesByType("paint");
-        // const firstInput = performance.getEntriesByType("first-input");
-
         if (!this.previousResources?.length) {
             /**
              * Initial Page Load - Count All
@@ -336,7 +320,6 @@ export class AnalyticsSession implements ISession {
             this.previousResources = resources;
             return times ? times : 0;
         } else {
-            performance.mark("Begin");
             const intersection = resources.filter(x => !(this.previousResources as PerformanceEntryList).includes(x));
             this.previousResources = resources;
             if (intersection.length) {
@@ -346,9 +329,6 @@ export class AnalyticsSession implements ISession {
                 const times = this.sumOfDuration(resources);
                 return times;
             }
-            // const found = resources.findIndex(x => x.name.includes(this.currentPageName as string));
-            // const newEntries = resources.slice(found);
-            // return times ? times : 0;
         }
     }
     private sumOfDuration(resources: PerformanceEntryList) {
