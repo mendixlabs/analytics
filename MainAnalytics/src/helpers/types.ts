@@ -5,6 +5,11 @@ export interface INewPage {
     uuid: string;
     duration: number | undefined;
     loadTime: number;
+    // modals?: IPopUp[];
+}
+
+export interface IPopUp extends INewPage {
+    pageId: string;
 }
 export interface IAddPageDate {
     newPage: INewPage;
@@ -18,6 +23,8 @@ export interface IUserData {
     startedDate: Date;
     userIDMX: string;
     isGuestMX: string;
+    browserName: string;
+    browserVersion: string;
 }
 export interface ITimer {
     id: string;

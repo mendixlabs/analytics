@@ -17,6 +17,7 @@ export interface AnalyticsContainerProps {
     addPageViewed?: ActionValue;
     addPageLeave?: ActionValue;
     eventListenerAction?: ActionValue;
+    modalAction?: ActionValue;
 }
 
 export interface AnalyticsPreviewProps {
@@ -30,4 +31,5 @@ export interface AnalyticsPreviewProps {
     addPageViewed: {} | null;
     addPageLeave: {} | null;
     eventListenerAction: {} | null;
+    modalAction: {} | null;
 }

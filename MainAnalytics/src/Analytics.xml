@@ -43,6 +43,10 @@
                 <caption>Event</caption>
                 <description>Action - Event Widget</description>
             </property>
+            <property key="modalAction" type="action" required="true">
+                <caption>Modal</caption>
+                <description>Action - Modal Open | Closed</description>
+            </property>
             <!-- <property key="timerAction" type="action" required="true">
                 <caption>Timer</caption>
                 <description>Action - Timer Widget</description>

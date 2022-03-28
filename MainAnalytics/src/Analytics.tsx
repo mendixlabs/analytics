@@ -52,9 +52,14 @@ const Analytics = (props: AnalyticsContainerProps) => {
         props.communicateOut.setValue(JSON.stringify(newPage));
         props.addPageViewed?.execute();
     };
+    const addModalToServer = (newPage: IMendixCommunicationPayload) => {
+        props.communicateOut.setValue(JSON.stringify(newPage));
+        props.modalAction?.execute();
+    };
 
     function mutationObsCallback() {
         session.addPage(addPageToServer);
+        session.lookForModal(addModalToServer);
     }
 
     function pageOffLoad() {

@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import React from "react";
 import PubSub from "pubsub-js";
-import { debounce } from ".";
-import { EClassNamePayloadType, IAddPageDate, IClassNamePayload, INewPage, IUserData } from "./types";
+// import * as Bowser from "bowser"; // TypeScript
+import { debounce, get_browser } from ".";
+import { EClassNamePayloadType, IAddPageDate, IClassNamePayload, INewPage, IPopUp, IUserData } from "./types";
 
 interface ISession {
     currentPageName: string | undefined;
@@ -30,6 +31,8 @@ export class AnalyticsSession implements ISession {
     currentPageName: string | undefined;
     sessionId: string | undefined;
     didUserReload = false;
+    private isModalOpen: boolean;
+    private currentModal: IPopUp | undefined;
     private startedDate: Date;
     private currentPage: INewPage | undefined;
     private prevPage: INewPage | undefined;
@@ -42,6 +45,7 @@ export class AnalyticsSession implements ISession {
 
     constructor() {
         this.observer = undefined;
+        this.isModalOpen = false;
         this.startedDate = new Date();
     }
 
@@ -73,6 +77,7 @@ export class AnalyticsSession implements ISession {
      * addLandingPage
      */
     public addLandingPage(id: string, callBackFn: (n: IMendixCommunicationPayload) => void) {
+        // console.log("browser", browser);
         const browserPageName = window.history.state.pageInfo.formParams.path;
         // Set Up Initial User Settings
         this.setUpSession(id);
@@ -100,6 +105,7 @@ export class AnalyticsSession implements ISession {
             userSession: this.userData as IUserData,
             newPage: this.currentPage,
             prevPage: this.prevPage,
+            modal: this.currentModal,
             event
         };
         return pLoad;
@@ -226,15 +232,51 @@ export class AnalyticsSession implements ISession {
             localStorage.setItem(this.localStorageString, this.sessionId);
         }
     }
+
+    lookForModal(callBackFn: (n: any) => void) {
+        const browserPageName = window.history.state.pageInfo.formParams.path;
+        const getDialog = document.querySelectorAll('[role="dialog"]')[0];
+        // Add New Modal
+        if (getDialog && !this.isModalOpen) {
+            const modalName = document.getElementsByClassName("modal-header")[0].textContent;
+            this.isModalOpen = true;
+            const loadTime = this.getCurrentResources();
+            const newModal: IPopUp = {
+                pageId: this.currentPage?.uuid as string,
+                startDate: new Date(),
+                leaveDate: undefined,
+                duration: undefined,
+                pathName: modalName ? modalName.replace("×", "") : browserPageName,
+                uuid: uuidv4(),
+                loadTime
+            };
+            this.currentModal = newModal;
+            const payLoad = this.buildPayloads({});
+            return callBackFn(payLoad);
+        }
+
+        // Modal was open now Closed
+        if (!getDialog && this.isModalOpen && this.currentModal) {
+            this.isModalOpen = false;
+            const timerInMS = new Date().valueOf() - (this.currentPage?.startDate as Date).valueOf();
+            this.currentModal.leaveDate = new Date();
+            this.currentModal.duration = timerInMS;
+            const payLoad = this.buildPayloads({});
+            return callBackFn(payLoad);
+        }
+    }
     addPage(callBackFn: (n: any) => void) {
         const browserPageName = window.history.state.pageInfo.formParams.path;
+
         // Check if page is new
         if (this.currentPageName === browserPageName) {
             // Page did not change
+            this.getCurrentResources(); // Testing to see if we get more accurate page load times
         } else {
             // Page did change
             PubSub.publish("PAGE_CHANGE", true); // Let Widget Know The Page Changed
             this.currentPageName = browserPageName;
+            this.isModalOpen = false;
             const loadTime = this.getCurrentResources();
             const newPage: INewPage = {
                 startDate: new Date(),
@@ -267,6 +309,7 @@ export class AnalyticsSession implements ISession {
     }
 
     private userDeviceSettings() {
+        const browser = get_browser();
         const userData: IUserData = {
             didUserReload: this.didUserReload,
             userAgent: navigator.userAgent,
@@ -274,7 +317,9 @@ export class AnalyticsSession implements ISession {
             language: navigator.language,
             startedDate: this.startedDate,
             userIDMX: (window as any).mx?.session?.getUserId(),
-            isGuestMX: (window as any).mx?.session?.isGuest()
+            isGuestMX: (window as any).mx?.session?.isGuest(),
+            browserName: browser.name,
+            browserVersion: browser.version
         };
         return userData;
     }
