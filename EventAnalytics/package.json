@@ -40,6 +40,7 @@
         "@types/pubsub-js": "^1.8.3",
         "@types/uuid": "^8.3.4",
         "classnames": "^2.2.6",
+        "nanoid": "^3.3.2",
         "pubsub-js": "^1.9.4",
         "uuid": "^8.3.2"
     }

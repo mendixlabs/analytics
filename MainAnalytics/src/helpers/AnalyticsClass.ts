@@ -1,22 +1,34 @@
-import { v4 as uuidv4 } from "uuid";
+import { nanoid } from "nanoid";
 import React from "react";
 import PubSub from "pubsub-js";
-// import * as Bowser from "bowser"; // TypeScript
 import { debounce, get_browser } from ".";
-import { EClassNamePayloadType, IAddPageDate, IClassNamePayload, INewPage, IPopUp, IUserData } from "./types";
+import {
+    EClassNamePayloadType,
+    IAddPageDate,
+    IClassNamePayload,
+    IFormPayload,
+    INewPage,
+    IPopUp,
+    IUserData,
+    PayloadType
+} from "./types";
 
 interface ISession {
     currentPageName: string | undefined;
     sessionId: string | undefined;
     didUserReload: boolean;
     eventListeners: IClassNamePayload[];
+    formListeners: any[];
     eventListenerName: string;
+    formListenerName: string;
     setUpSession: (id: string) => IUserData;
     addPage: (callBackFn: (n: IAddPageDate) => void) => void;
     initializeMutant: (ref: React.MutableRefObject<HTMLElement>, callback: Function) => MutationObserver;
     disconnectMutant: () => any;
     eventListenerSub: (callBackFn: (n: IClassNamePayload) => void) => void;
+    formListenerSub: (callBackFn: (n: IClassNamePayload) => void) => void;
     eventListenerUnSub: () => void;
+    formListenerUnSub: () => void;
 }
 export interface IMendixCommunicationPayload {
     sessionId: string;
@@ -26,8 +38,10 @@ export interface IMendixCommunicationPayload {
 
 export class AnalyticsSession implements ISession {
     eventListeners: IClassNamePayload[] = [];
+    formListeners: any[] = [];
     eventListenerName = "CLASSNAME_MENDIX_LISTENER";
     timerListenerName = "TIMER_MENDIX_LISTENER";
+    formListenerName = "FORM_MENDIX_LISTENER";
     currentPageName: string | undefined;
     sessionId: string | undefined;
     didUserReload = false;
@@ -40,6 +54,7 @@ export class AnalyticsSession implements ISession {
     private localStorageString = "sessionId";
     private previousResources: PerformanceEntryList | undefined;
     private eventListenerToken: string | undefined;
+    private formListenerToken: string | undefined;
     private timerToken: string | undefined;
     private userData: IUserData | undefined;
 
@@ -49,6 +64,22 @@ export class AnalyticsSession implements ISession {
         this.startedDate = new Date();
     }
 
+    /**
+     * Initialize Event Listener Pubsub
+     */
+    formListenerSub(callBackFn: (n: IClassNamePayload) => void) {
+        this.formListenerToken = PubSub.subscribe(this.formListenerName, (msg: string, data: string) => {
+            this.formListenerCallBack(msg, data, callBackFn);
+        });
+    }
+    /**
+     * UnLoad Event Listener Pubsub
+     */
+    formListenerUnSub() {
+        if (this.formListenerToken) {
+            PubSub.unsubscribe(this.formListenerToken);
+        }
+    }
     /**
      * Initialize Event Listener Pubsub
      */
@@ -89,7 +120,7 @@ export class AnalyticsSession implements ISession {
             leaveDate: undefined,
             duration: undefined,
             pathName: browserPageName,
-            uuid: uuidv4(),
+            uuid: nanoid(),
             loadTime
         };
         this.currentPage = newPage;
@@ -139,6 +170,24 @@ export class AnalyticsSession implements ISession {
                         callBackFn({ ...event, type: EClassNamePayloadType.UNLOAD });
                     });
                 }, 1000);
+                break;
+            default:
+                break;
+        }
+    }
+    /**
+     * Callback called by form Pubsub
+     */
+    private formListenerCallBack(_msg: string, data: string, callBackFn: (n: any) => void) {
+        const parsedData: IFormPayload = JSON.parse(data);
+        console.log("parsedData", parsedData);
+        // const payLoad = this.buildPayloads({ event: clickAddedEvent });
+        switch (parsedData.type) {
+            case PayloadType.REGISTER:
+                break;
+            case PayloadType.FOCUS_SWITCH:
+                break;
+            case PayloadType.LEAVE:
                 break;
             default:
                 break;
@@ -247,7 +296,7 @@ export class AnalyticsSession implements ISession {
                 leaveDate: undefined,
                 duration: undefined,
                 pathName: modalName ? modalName.replace("×", "") : browserPageName,
-                uuid: uuidv4(),
+                uuid: nanoid(),
                 loadTime
             };
             this.currentModal = newModal;
@@ -283,7 +332,7 @@ export class AnalyticsSession implements ISession {
                 leaveDate: undefined,
                 duration: undefined,
                 pathName: browserPageName,
-                uuid: uuidv4(),
+                uuid: nanoid(),
                 loadTime
             };
             this.currentPage = newPage;

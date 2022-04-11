@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { nanoid } from "nanoid";
 import { createElement, Fragment, useEffect, useRef } from "react";
 import { AnalyticsEventContainerProps, ClassNameToTrackType } from "../typings/AnalyticsEventProps";
 import PubSub from "pubsub-js";
@@ -10,7 +10,7 @@ const stringifyMe = (payLoad: any) => {
 };
 
 export const AnalyticsEvent = (props: AnalyticsEventContainerProps) => {
-    const _id = useRef(uuidv4());
+    const _id = useRef(nanoid());
     const dispatchClickEvent = (className: ClassNameToTrackType, id: string) => {
         const payLoad = {
             ...className,
@@ -29,7 +29,7 @@ export const AnalyticsEvent = (props: AnalyticsEventContainerProps) => {
                     const foundClassName = Array.from(q.classList).find(classItem =>
                         classItem.includes(className.className)
                     );
-                    const _id = uuidv4();
+                    const _id = nanoid();
                     const uu: ClassNameToTrackType = {
                         ...className,
                         friendlyName: foundClassName as string,
@@ -40,7 +40,7 @@ export const AnalyticsEvent = (props: AnalyticsEventContainerProps) => {
             } else {
                 const classFound = document.getElementsByClassName(className.className)[0];
                 if (classFound) {
-                    const _id = uuidv4();
+                    const _id = nanoid();
                     classFound.addEventListener("click", () => dispatchClickEvent(className, _id)) as any;
                     return classFound;
                 }

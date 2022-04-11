@@ -1,7 +1,7 @@
 import { createElement, useRef, useEffect, Fragment } from "react";
 import { AnalyticsContainerProps } from "../typings/AnalyticsProps";
 import { ValueStatus } from "mendix";
-import { AnalyticsSession, IMendixCommunicationPayload } from "./helpers/Analytics";
+import { AnalyticsSession, IMendixCommunicationPayload } from "./helpers/AnalyticsClass";
 import { IClassNamePayload } from "./helpers/types";
 
 const session = new AnalyticsSession();
@@ -15,6 +15,12 @@ const Analytics = (props: AnalyticsContainerProps) => {
             props.eventListenerAction?.execute();
         }
     };
+    const sendClickForm = (event: IClassNamePayload) => {
+        if (props.FormListenerAction?.canExecute && !props.FormListenerAction?.isExecuting) {
+            props.communicateOut.setValue(JSON.stringify(event));
+            props.FormListenerAction?.execute();
+        }
+    };
 
     // Initialize PubSub for Click Listeners
     useEffect(() => {
@@ -23,6 +29,14 @@ const Analytics = (props: AnalyticsContainerProps) => {
             session.eventListenerUnSub();
         };
     }, [props.eventListenerAction]);
+
+    // Initialize PubSub for Form Listeners
+    useEffect(() => {
+        session.formListenerSub(sendClickForm);
+        return () => {
+            session.formListenerUnSub();
+        };
+    }, [props.FormListenerAction]);
 
     useEffect(() => {
         if (props.jsonState.status === ValueStatus.Available && !session.sessionId) {

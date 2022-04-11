@@ -62,3 +62,13 @@ export enum EClassNamePayloadType {
     LISTENING = "LISTENING",
     UNLOAD = "UNLOAD"
 }
+export enum PayloadType {
+    REGISTER,
+    FOCUS_SWITCH,
+    LEAVE
+}
+export interface IFormPayload {
+    id: string;
+    type: PayloadType;
+    elementId: string;
+}
