@@ -9,15 +9,15 @@ const session = new AnalyticsSession();
 const Analytics = (props: AnalyticsContainerProps) => {
     const ref = useRef(document.body);
 
-    const sendClickEvent = (event: IClassNamePayload) => {
+    const sendClickEvent = (payLoad: IClassNamePayload) => {
         if (props.eventListenerAction?.canExecute && !props.eventListenerAction?.isExecuting) {
-            props.communicateOut.setValue(JSON.stringify(event));
+            props.communicateOut.setValue(JSON.stringify(payLoad));
             props.eventListenerAction?.execute();
         }
     };
-    const sendClickForm = (event: IClassNamePayload) => {
+    const sendClickForm = (payLoad: IClassNamePayload) => {
         if (props.FormListenerAction?.canExecute && !props.FormListenerAction?.isExecuting) {
-            props.communicateOut.setValue(JSON.stringify(event));
+            props.communicateOut.setValue(JSON.stringify(payLoad));
             props.FormListenerAction?.execute();
         }
     };

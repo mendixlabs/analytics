@@ -6,46 +6,62 @@ import { AnalyticsFormContainerProps } from "../typings/AnalyticsFormProps";
 
 const formListenerName = "FORM_MENDIX_LISTENER";
 
-enum PayloadType {
-    REGISTER,
-    FOCUS_SWITCH,
-    LEAVE
+export enum PayloadType {
+    REGISTER = "REGISTER",
+    FOCUS_SWITCH = "FOCUS_SWITCH",
+    LEAVE = "LEAVE"
 }
 
 const stringifyMe = (payLoad: any) => {
     return JSON.stringify(payLoad);
 };
-export function AnalyticsForm({ sampleText }: AnalyticsFormContainerProps): ReactElement {
-    const _id = useRef(nanoid());
+export function AnalyticsForm({ classNameToTrack }: AnalyticsFormContainerProps): ReactElement {
+    const _id = useRef(nanoid().toUpperCase());
+    const browserPageName = window.history.state.pageInfo.formParams.path;
     const registerForm = () => {
         const payLoad = {
-            id: _id,
+            browserPageName,
+            id: _id.current,
             type: PayloadType.REGISTER
         };
         PubSub.publish(formListenerName, stringifyMe(payLoad));
     };
     const registerFocusSwitch = (elementId: string) => {
         const payLoad = {
-            id: _id,
             elementId,
+            browserPageName,
+            id: _id.current,
             type: PayloadType.FOCUS_SWITCH
         };
         PubSub.publish(formListenerName, stringifyMe(payLoad));
     };
     const registerLeaveForm = () => {
         const payLoad = {
-            id: _id,
+            browserPageName,
+            id: _id.current,
             type: PayloadType.LEAVE
         };
         PubSub.publish(formListenerName, stringifyMe(payLoad));
     };
 
     const callBack = (e: FocusEvent) => {
-        registerFocusSwitch((e.target as HTMLElement).id);
+        let valueToPass = "";
+        if ((e.target as HTMLElement).id) {
+            const getInputsLabel = document.querySelector(`label[for='${(e.target as HTMLElement).id}']`);
+
+            if (getInputsLabel) {
+                valueToPass = getInputsLabel.innerHTML;
+            } else {
+                valueToPass = (e.target as HTMLElement).id;
+            }
+        } else {
+            valueToPass = (e.target as HTMLElement).innerHTML;
+        }
+        registerFocusSwitch(valueToPass);
     };
 
     useEffect(() => {
-        const foundClassName = document.getElementsByClassName("classFormToTrack")[0];
+        const foundClassName = document.getElementsByClassName(classNameToTrack)[0];
         foundClassName.addEventListener("focusin", callBack);
         registerForm();
         return () => {

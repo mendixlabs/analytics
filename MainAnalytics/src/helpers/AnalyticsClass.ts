@@ -9,8 +9,7 @@ import {
     IFormPayload,
     INewPage,
     IPopUp,
-    IUserData,
-    PayloadType
+    IUserData
 } from "./types";
 
 interface ISession {
@@ -108,7 +107,6 @@ export class AnalyticsSession implements ISession {
      * addLandingPage
      */
     public addLandingPage(id: string, callBackFn: (n: IMendixCommunicationPayload) => void) {
-        // console.log("browser", browser);
         const browserPageName = window.history.state.pageInfo.formParams.path;
         // Set Up Initial User Settings
         this.setUpSession(id);
@@ -120,7 +118,7 @@ export class AnalyticsSession implements ISession {
             leaveDate: undefined,
             duration: undefined,
             pathName: browserPageName,
-            uuid: nanoid(),
+            uuid: nanoid().toUpperCase(),
             loadTime
         };
         this.currentPage = newPage;
@@ -130,13 +128,14 @@ export class AnalyticsSession implements ISession {
         callBackFn(payLoad);
         // Build Payload
     }
-    private buildPayloads({ event }: any): IMendixCommunicationPayload {
+    private buildPayloads({ event, form }: any): IMendixCommunicationPayload {
         const pLoad: IMendixCommunicationPayload = {
             sessionId: this.sessionId as string,
             userSession: this.userData as IUserData,
             newPage: this.currentPage,
             prevPage: this.prevPage,
             modal: this.currentModal,
+            form,
             event
         };
         return pLoad;
@@ -175,22 +174,32 @@ export class AnalyticsSession implements ISession {
                 break;
         }
     }
+
     /**
      * Callback called by form Pubsub
      */
     private formListenerCallBack(_msg: string, data: string, callBackFn: (n: any) => void) {
+        let count = 0;
         const parsedData: IFormPayload = JSON.parse(data);
+        console.log("this.currentPage?.pathName", this.currentPage?.pathName);
         console.log("parsedData", parsedData);
-        // const payLoad = this.buildPayloads({ event: clickAddedEvent });
-        switch (parsedData.type) {
-            case PayloadType.REGISTER:
-                break;
-            case PayloadType.FOCUS_SWITCH:
-                break;
-            case PayloadType.LEAVE:
-                break;
-            default:
-                break;
+        const addedDate = {
+            ...parsedData,
+            uuid: parsedData.id,
+            startDate: new Date()
+        };
+        const myInterVal = setInterval(() => {
+            const payLoad = this.buildPayloads({ form: addedDate });
+            if (this.currentPage?.pathName && this.currentPage?.pathName === parsedData.browserPageName) {
+                callBackFn(payLoad);
+                clearInterval(myInterVal);
+            } else {
+                count + 1;
+            }
+        }, 500);
+        if (count >= 10) {
+            // Lost One
+            clearInterval(myInterVal);
         }
     }
     /**
@@ -296,7 +305,7 @@ export class AnalyticsSession implements ISession {
                 leaveDate: undefined,
                 duration: undefined,
                 pathName: modalName ? modalName.replace("×", "") : browserPageName,
-                uuid: nanoid(),
+                uuid: nanoid().toUpperCase(),
                 loadTime
             };
             this.currentModal = newModal;
@@ -332,7 +341,7 @@ export class AnalyticsSession implements ISession {
                 leaveDate: undefined,
                 duration: undefined,
                 pathName: browserPageName,
-                uuid: nanoid(),
+                uuid: nanoid().toUpperCase(),
                 loadTime
             };
             this.currentPage = newPage;

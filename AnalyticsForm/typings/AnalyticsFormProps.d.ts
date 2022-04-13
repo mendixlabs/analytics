@@ -10,7 +10,7 @@ export interface AnalyticsFormContainerProps {
     class: string;
     style?: CSSProperties;
     tabIndex?: number;
-    sampleText: string;
+    classNameToTrack: string;
 }
 
 export interface AnalyticsFormPreviewProps {
@@ -18,5 +18,5 @@ export interface AnalyticsFormPreviewProps {
     style: string;
     styleObject?: CSSProperties;
     readOnly: boolean;
-    sampleText: string;
+    classNameToTrack: string;
 }

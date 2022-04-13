@@ -63,12 +63,13 @@ export enum EClassNamePayloadType {
     UNLOAD = "UNLOAD"
 }
 export enum PayloadType {
-    REGISTER,
-    FOCUS_SWITCH,
-    LEAVE
+    REGISTER = "REGISTER",
+    FOCUS_SWITCH = "FOCUS_SWITCH",
+    LEAVE = "LEAVE"
 }
 export interface IFormPayload {
     id: string;
     type: PayloadType;
-    elementId: string;
+    elementId?: string;
+    browserPageName: string;
 }

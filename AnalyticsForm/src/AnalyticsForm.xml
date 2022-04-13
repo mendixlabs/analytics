@@ -8,9 +8,9 @@
     <icon/>
     <properties>
         <propertyGroup caption="General">
-            <property key="sampleText" type="string" required="false">
-                <caption>Default value</caption>
-                <description>Sample text input</description>
+            <property key="classNameToTrack" type="string" required="true">
+                <caption>Class Name</caption>
+                <description>Class Name To Target</description>
             </property>
         </propertyGroup>
     </properties>
