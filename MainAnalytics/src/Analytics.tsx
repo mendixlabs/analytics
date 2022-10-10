@@ -60,12 +60,15 @@ const Analytics = (props: AnalyticsContainerProps) => {
         props.addPageLeave?.execute();
     };
     /**
-     * On PAge Change
+     * On Page Change
      */
     const addPageToServer = (newPage: IMendixCommunicationPayload) => {
         props.communicateOut.setValue(JSON.stringify(newPage));
         props.addPageViewed?.execute();
     };
+    /**
+     * On Modal Open
+     */
     const addModalToServer = (newPage: IMendixCommunicationPayload) => {
         props.communicateOut.setValue(JSON.stringify(newPage));
         props.modalAction?.execute();
