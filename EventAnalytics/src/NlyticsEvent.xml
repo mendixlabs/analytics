@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <widget
-    id="mendix.analyticsevent.AnalyticsEvent"
+    id="mendix.nlyticsevent.NlyticsEvent"
     pluginWidget="true"
     needsEntityContext="true"
     offlineCapable="true"
