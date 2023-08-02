@@ -1,7 +1,7 @@
 {
-    "name": "analyticsevent",
-    "widgetName": "AnalyticsEvent",
-    "version": "1.0.0",
+    "name": "nlyticsevent",
+    "widgetName": "NlyticsEvent",
+    "version": "1.0.1",
     "description": "My widget description",
     "copyright": "2020 Mendix Technology BV",
     "author": "ahwelgemoed",
@@ -26,7 +26,7 @@
     },
     "license": "Apache-2.0",
     "devDependencies": {
-        "@mendix/pluggable-widgets-tools": "^9.0.0",
+        "@mendix/pluggable-widgets-tools": "^9.0.3",
         "@types/big.js": "^6.0.2",
         "@types/classnames": "^2.2.4",
         "@types/enzyme": "^3.10.8",

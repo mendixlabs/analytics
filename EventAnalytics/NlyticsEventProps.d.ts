@@ -1,5 +1,5 @@
 /**
- * This file was generated from AnalyticsEvent.xml
+ * This file was generated from NlyticsEvent.xml
  * WARNING: All changes made to this file will be overwritten
  * @author Mendix UI Content Team
  */
@@ -17,7 +17,7 @@ export interface ClassNameToTrackPreviewType {
     isListView: boolean;
 }
 
-export interface AnalyticsEventContainerProps {
+export interface NlyticsEventContainerProps {
     name: string;
     class: string;
     style?: CSSProperties;
@@ -25,7 +25,7 @@ export interface AnalyticsEventContainerProps {
     classNameToTrack: ClassNameToTrackType[];
 }
 
-export interface AnalyticsEventPreviewProps {
+export interface NlyticsEventPreviewProps {
     className: string;
     style: string;
     styleObject?: CSSProperties;
